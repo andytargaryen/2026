@@ -512,16 +512,31 @@ export default function App() {
 
   useEffect(()=>{
     async function load(){
-      try { const r=await window.storage.get("hfb2"); setTxns(r?.value?JSON.parse(r.value):SEED); }
-      catch { setTxns(SEED); }
+      try {
+        console.log("Loading from Supabase...");
+        const rows = await db.getAll();
+        console.log("Supabase returned:", rows ? rows.length : 0, "rows");
+        if(rows && rows.length>0){ setTxns(rows); }
+        else { setTxns(SEED); }
+      } catch(e) {
+        console.error("Load error:", e);
+        setTxns(SEED);
+      }
       setLoading(false);
     }
     load();
   },[]);
 
   const persist=useCallback(async(t)=>{
-    try { await window.storage.set("hfb2",JSON.stringify(t)); setSaved(true); setTimeout(()=>setSaved(false),1800); }
-    catch(e){console.error(e);}
+    try {
+      const mapped=t.map(r=>({id:r.id,date:r.date,description:r.desc,amount:r.amount,cat:r.cat,type:r.type}));
+      await fetch(`${SUPABASE_URL}/rest/v1/transactions`,{
+        method:"POST",
+        headers:{apikey:SUPABASE_KEY,Authorization:`Bearer ${SUPABASE_KEY}`,"Content-Type":"application/json",Prefer:"resolution=merge-duplicates"},
+        body:JSON.stringify(mapped)
+      });
+      setSaved(true); setTimeout(()=>setSaved(false),1800);
+    } catch(e){console.error(e);}
   },[]);
 
   const addTxn=async()=>{
@@ -549,7 +564,14 @@ export default function App() {
       const dupes=parsed.length-newOnes.length;
       const u=[...newOnes,...txns].sort((a,b)=>b.date.localeCompare(a.date));
       setTxns(u);
-      if(newOnes.length>0) await db.upsert(newOnes);
+      if(newOnes.length>0){
+        const mapped=newOnes.map(r=>({id:r.id,date:r.date,description:r.desc,amount:r.amount,cat:r.cat,type:r.type}));
+        await fetch(`${SUPABASE_URL}/rest/v1/transactions`,{
+          method:"POST",
+          headers:{apikey:SUPABASE_KEY,Authorization:`Bearer ${SUPABASE_KEY}`,"Content-Type":"application/json",Prefer:"resolution=merge-duplicates"},
+          body:JSON.stringify(mapped)
+        });
+      }
       setSaved(true); setTimeout(()=>setSaved(false),1800);
       setImportStatus({added:newOnes.length,dupes});
     } catch(err){ setImportStatus({error:typeof err==="string"?err:"Import failed. Check the file format."}); }
