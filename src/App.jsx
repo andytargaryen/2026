@@ -475,15 +475,16 @@ export default function App() {
   const fileRef=useRef(null);
 
   useEffect(()=>{
-    try {
-      const stored = localStorage.getItem("hfb2");
-      setTxns(stored ? JSON.parse(stored) : SEED);
-    } catch { setTxns(SEED); }
-    setLoading(false);
+    async function load(){
+      try { const r=await window.storage.get("hfb2"); setTxns(r?.value?JSON.parse(r.value):SEED); }
+      catch { setTxns(SEED); }
+      setLoading(false);
+    }
+    load();
   },[]);
 
-  const persist=useCallback((t)=>{
-    try { localStorage.setItem("hfb2",JSON.stringify(t)); setSaved(true); setTimeout(()=>setSaved(false),1800); }
+  const persist=useCallback(async(t)=>{
+    try { await window.storage.set("hfb2",JSON.stringify(t)); setSaved(true); setTimeout(()=>setSaved(false),1800); }
     catch(e){console.error(e);}
   },[]);
 
@@ -532,8 +533,23 @@ export default function App() {
     return{month:m.slice(0,3),income:inc||null,expenses:exp||null,budget:9000};
   }).filter(d=>d.income||d.expenses);
 
-  const donutData=CATEGORIES.filter(c=>catTotals[c]>0)
-    .map(c=>({name:c.length>18?c.slice(0,16)+"…":c,fullName:c,value:catTotals[c],color:CAT_COLORS[c]}));
+  const CAT_ABBREV={
+    "Housing & Utilities":"Housing",
+    "Food":"Food",
+    "Shopping & Subscription":"Shopping",
+    "Transportation":"Transport",
+    "Personal Care":"Personal",
+    "Entertainment":"Entertain.",
+    "Education Expense":"Education",
+    "Tithe, Charity, & Gifts":"Tithe/Gifts",
+    "Housewares and furnishings":"Housewares",
+    "Kid's":"Kid's",
+    "Miscellaneous":"Misc.",
+  };
+  const donutData=CATEGORIES
+    .filter(c=>catTotals[c]>0)
+    .map(c=>({name:CAT_ABBREV[c]||c,fullName:c,value:catTotals[c],color:CAT_COLORS[c],budget:BUDGET[c]}))
+    .sort((a,b)=>b.budget-a.budget);
 
   const fTxns=mTxns.filter(t=>{
     const q=search.toLowerCase();
@@ -690,20 +706,35 @@ export default function App() {
       {tab==="spending"&&<>
         <div style={{background:"#fff",border:"1px solid #DDD5C8",borderRadius:12,padding:14,marginBottom:13}}>
           <div style={{fontSize:"0.6rem",textTransform:"uppercase",letterSpacing:"0.08em",color:"#7A6E60",marginBottom:11}}>Spending Breakdown — {MONTHS[month]}</div>
-          <div style={{display:"flex",justifyContent:"center"}}>
-            <RePieChart width={240} height={240}>
-              <Pie data={donutData} cx={115} cy={115} innerRadius={60} outerRadius={100} dataKey="value" paddingAngle={2}>
-                {donutData.map((e,i)=><Cell key={i} fill={e.color}/>)}
-              </Pie>
-              <Tooltip formatter={(v,n)=>[fmt(v),n]} contentStyle={{fontSize:10,borderRadius:8}}/>
-            </RePieChart>
-          </div>
-          <div style={{display:"flex",flexWrap:"wrap",gap:6,justifyContent:"center",marginTop:4}}>
-            {donutData.map(d=>(
-              <div key={d.fullName} style={{display:"flex",alignItems:"center",gap:4,fontSize:"0.66rem",color:"#7A6E60"}}>
-                <div style={{width:7,height:7,borderRadius:"50%",background:d.color}}/>{d.name}
-              </div>
-            ))}
+          <div style={{display:"flex",alignItems:"center",gap:12}}>
+            {/* Legend — top left, no amounts */}
+            <div style={{display:"flex",flexDirection:"column",gap:5,flexShrink:0,minWidth:90}}>
+              {donutData.map(d=>(
+                <div key={d.fullName} style={{display:"flex",alignItems:"center",gap:5}}>
+                  <div style={{width:8,height:8,borderRadius:2,background:d.color,flexShrink:0}}/>
+                  <span style={{fontSize:"0.68rem",color:"#2C2416"}}>{d.name}</span>
+                </div>
+              ))}
+            </div>
+            {/* Donut — larger */}
+            <div style={{flex:1,display:"flex",justifyContent:"center"}}>
+              <RePieChart width={220} height={220}>
+                <Pie data={donutData} cx={110} cy={110} innerRadius={55} outerRadius={105} dataKey="value" paddingAngle={2}
+                  label={({cx,cy,midAngle,innerRadius,outerRadius,value})=>{
+                    const RADIAN=Math.PI/180;
+                    const r=innerRadius+(outerRadius-innerRadius)*0.5;
+                    const x=cx+r*Math.cos(-midAngle*RADIAN);
+                    const y=cy+r*Math.sin(-midAngle*RADIAN);
+                    const rounded=Math.round(value/100)*100;
+                    if(value<120) return null;
+                    return(<text x={x} y={y} fill="#fff" textAnchor="middle" dominantBaseline="central" fontSize={9} fontWeight="bold" fontFamily="Georgia,serif">${rounded>=1000?(rounded/1000).toFixed(1)+"k":rounded}</text>);
+                  }}
+                  labelLine={false}>
+                  {donutData.map((e,i)=><Cell key={i} fill={e.color}/>)}
+                </Pie>
+                <Tooltip formatter={(v,n)=>[fmt(v),n]} contentStyle={{fontSize:10,borderRadius:8}}/>
+              </RePieChart>
+            </div>
           </div>
         </div>
         <div style={{background:"#fff",border:"1px solid #DDD5C8",borderRadius:12,padding:14}}>
