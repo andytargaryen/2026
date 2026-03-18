@@ -11,10 +11,15 @@ const db = {
     const r = await fetch(`${SUPABASE_URL}/rest/v1/transactions?select=*&order=date.desc`, {
       headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` }
     });
-    return r.ok ? r.json() : [];
+    if(!r.ok){ console.error("Supabase fetch failed:", r.status, await r.text()); return []; }
+    const rows = await r.json();
+    // Map "description" column back to "desc" for the app
+    return rows.map(r=>({...r, desc: r.description||r.desc}));
   },
   async upsert(rows) {
-    await fetch(`${SUPABASE_URL}/rest/v1/transactions`, {
+    // Map "desc" to "description" for Supabase
+    const mapped = rows.map(r=>({id:r.id,date:r.date,description:r.desc,amount:r.amount,cat:r.cat,type:r.type}));
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/transactions`, {
       method: "POST",
       headers: {
         apikey: SUPABASE_KEY,
@@ -22,8 +27,9 @@ const db = {
         "Content-Type": "application/json",
         Prefer: "resolution=merge-duplicates",
       },
-      body: JSON.stringify(rows),
+      body: JSON.stringify(mapped),
     });
+    if(!res.ok) console.error("Supabase upsert failed:", res.status, await res.text());
   },
   async remove(id) {
     await fetch(`${SUPABASE_URL}/rest/v1/transactions?id=eq.${id}`, {
