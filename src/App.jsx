@@ -3,6 +3,36 @@ import { PlusCircle, X, ChevronLeft, ChevronRight, Search, Trash2, TrendingUp, P
 import { AreaChart, Area, BarChart, Bar, Cell, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart as RePieChart, Pie } from "recharts";
 import * as XLSX from "xlsx";
 
+const SUPABASE_URL = "https://qezlyqnwrulwdjxydjml.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFlemx5cW53cnVsd2RqeHlkam1sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4NTc4MjQsImV4cCI6MjA4OTQzMzgyNH0.ISWoPma2qGNSzmp52l07FbWyI-2v6iI3fXyb_nWNC-s";
+
+const db = {
+  async getAll() {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/transactions?select=*&order=date.desc`, {
+      headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` }
+    });
+    return r.ok ? r.json() : [];
+  },
+  async upsert(rows) {
+    await fetch(`${SUPABASE_URL}/rest/v1/transactions`, {
+      method: "POST",
+      headers: {
+        apikey: SUPABASE_KEY,
+        Authorization: `Bearer ${SUPABASE_KEY}`,
+        "Content-Type": "application/json",
+        Prefer: "resolution=merge-duplicates",
+      },
+      body: JSON.stringify(rows),
+    });
+  },
+  async remove(id) {
+    await fetch(`${SUPABASE_URL}/rest/v1/transactions?id=eq.${id}`, {
+      method: "DELETE",
+      headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` }
+    });
+  },
+};
+
 const BUDGET = {
   "Housing & Utilities":2690,"Food":1750,"Shopping & Subscription":1250,
   "Transportation":600,"Personal Care":500,"Entertainment":500,
@@ -488,14 +518,19 @@ export default function App() {
     catch(e){console.error(e);}
   },[]);
 
-  const addTxn=()=>{
+  const addTxn=async()=>{
     if(!form.desc||!form.amount||isNaN(parseFloat(form.amount)))return;
     const t={...form,id:genId(),amount:parseFloat(form.amount)};
-    const u=[t,...txns]; setTxns(u); persist(u); setShowAdd(false);
+    const u=[t,...txns]; setTxns(u);
+    try { await db.upsert([t]); setSaved(true); setTimeout(()=>setSaved(false),1800); } catch(e){console.error(e);}
+    setShowAdd(false);
     setForm({date:new Date().toISOString().slice(0,10),desc:"",amount:"",cat:CATEGORIES[0],type:"expense"});
   };
 
-  const delTxn=(id)=>{ const u=txns.filter(t=>t.id!==id); setTxns(u); persist(u); };
+  const delTxn=async(id)=>{
+    const u=txns.filter(t=>t.id!==id); setTxns(u);
+    try { await db.remove(id); setSaved(true); setTimeout(()=>setSaved(false),1800); } catch(e){console.error(e);}
+  };
 
   const handleFile=async(e)=>{
     const f=e.target.files?.[0]; if(!f)return;
@@ -507,7 +542,9 @@ export default function App() {
       const newOnes=parsed.filter(t=>!keys.has(`${t.date}|${t.desc}|${t.amount}`));
       const dupes=parsed.length-newOnes.length;
       const u=[...newOnes,...txns].sort((a,b)=>b.date.localeCompare(a.date));
-      setTxns(u); persist(u);
+      setTxns(u);
+      if(newOnes.length>0) await db.upsert(newOnes);
+      setSaved(true); setTimeout(()=>setSaved(false),1800);
       setImportStatus({added:newOnes.length,dupes});
     } catch(err){ setImportStatus({error:typeof err==="string"?err:"Import failed. Check the file format."}); }
     setImporting(false); e.target.value="";
