@@ -48,10 +48,16 @@ const BUDGET = {
 const CATEGORIES = Object.keys(BUDGET);
 const INCOME_CATS = ["CNB","VA","Theater","Other Income"];
 const CAT_COLORS = {
-  "Housing & Utilities":"#4A6741","Food":"#C0522A","Shopping & Subscription":"#C9993A",
-  "Transportation":"#3A6B8A","Personal Care":"#D4826A","Entertainment":"#7B5EA7",
-  "Education Expense":"#5B8C5A","Tithe, Charity, & Gifts":"#E07B54",
-  "Housewares and furnishings":"#4A8FAD","Kid's":"#8D6E63","Miscellaneous":"#A68C5A",
+  "Housing & Utilities":"#2563EB","Food":"#DC2626","Shopping & Subscription":"#D97706",
+  "Transportation":"#0891B2","Personal Care":"#DB2777","Entertainment":"#7C3AED",
+  "Education Expense":"#059669","Tithe, Charity, & Gifts":"#EA580C",
+  "Housewares and furnishings":"#0D9488","Kid's":"#E11D48","Miscellaneous":"#6B7280",
+};
+const CAT_EMOJI = {
+  "Housing & Utilities":"🏠","Food":"🍔","Shopping & Subscription":"🛍️",
+  "Transportation":"🚗","Personal Care":"💆","Entertainment":"🎉",
+  "Education Expense":"📚","Tithe, Charity, & Gifts":"🙏",
+  "Housewares and furnishings":"🛋️","Kid's":"👶","Miscellaneous":"📦",
 };
 const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
 
@@ -578,7 +584,7 @@ export default function App() {
     setImporting(false); e.target.value="";
   };
 
-  if(loading||!txns) return <div style={{display:"flex",alignItems:"center",justifyContent:"center",height:"100vh",background:"#FAF7F2",fontFamily:"Georgia,serif",color:"#7A6E60"}}>Loading your budget…</div>;
+  if(loading||!txns) return <div style={{display:"flex",alignItems:"center",justifyContent:"center",height:"100vh",background:"#F8FAFC",fontFamily:"Georgia,serif",color:"#6B7280"}}>Loading your budget…</div>;
 
   const mTxns=txns.filter(t=>{const d=new Date(t.date+"T12:00:00");return d.getMonth()===month;});
   const income=mTxns.filter(t=>t.type==="income").reduce((s,t)=>s+t.amount,0);
@@ -631,32 +637,32 @@ export default function App() {
   const catSum = catF==="All"||catF==="Income" ? null
     : fTxns.reduce((s,t)=>s+(t.amount>0?t.amount:0),0);
 
-  const TABS=[{id:"overview",label:"Overview",Icon:TrendingUp},{id:"spending",label:"Spending",Icon:PieChart},{id:"transactions",label:"Txns",Icon:List},{id:"networth",label:"Net Worth",Icon:BarChart2}];
+  const TABS=[{id:"overview",label:"Overview",Icon:TrendingUp},{id:"transactions",label:"Txns",Icon:List},{id:"networth",label:"Net Worth",Icon:BarChart2}];
 
   return(
-  <div style={{fontFamily:"Georgia,serif",background:"#FAF7F2",minHeight:"100vh",color:"#2C2416"}}>
+  <div style={{fontFamily:"Georgia,serif",background:"#F8FAFC",minHeight:"100vh",color:"#111827"}}>
 
     {/* HEADER */}
-    <div style={{background:"#2C2416",color:"#FAF7F2",position:"sticky",top:0,zIndex:100}}>
+    <div style={{background:"#1E1B4B",color:"#FAF7F2",position:"sticky",top:0,zIndex:100}}>
       <div style={{padding:"13px 16px 0",maxWidth:700,margin:"0 auto"}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
           <div>
             <div style={{fontSize:"clamp(1rem,4vw,1.35rem)",fontWeight:"bold"}}>Hernandez Budget</div>
-            <div style={{fontSize:"0.6rem",color:"#A09080",letterSpacing:"0.1em",textTransform:"uppercase",marginTop:1}}>2026 · Family Tracker</div>
+            <div style={{fontSize:"0.6rem",color:"#818CF8",letterSpacing:"0.1em",textTransform:"uppercase",marginTop:1}}>2026 · Family Tracker</div>
           </div>
           <div style={{display:"flex",gap:6,alignItems:"center"}}>
             {saved&&<div style={{display:"flex",alignItems:"center",gap:3,background:"#4A6741",padding:"3px 8px",borderRadius:20,fontSize:"0.62rem",color:"#fff"}}><CheckCircle size={10}/>Saved</div>}
-            <button onClick={()=>{setShowImport(true);setImportStatus(null);}} style={{background:"#3A6B8A",color:"#fff",border:"none",borderRadius:20,padding:"6px 11px",fontSize:"0.7rem",fontWeight:"bold",cursor:"pointer",display:"flex",alignItems:"center",gap:4}}>
+            <button onClick={()=>{setShowImport(true);setImportStatus(null);}} style={{background:"#4F46E5",color:"#fff",border:"none",borderRadius:20,padding:"6px 11px",fontSize:"0.7rem",fontWeight:"bold",cursor:"pointer",display:"flex",alignItems:"center",gap:4}}>
               <Upload size={11}/>Import
             </button>
-            <button onClick={()=>setShowAdd(true)} style={{background:"#C9993A",color:"#2C2416",border:"none",borderRadius:20,padding:"6px 11px",fontSize:"0.7rem",fontWeight:"bold",cursor:"pointer",display:"flex",alignItems:"center",gap:4}}>
+            <button onClick={()=>setShowAdd(true)} style={{background:"#10B981",color:"#fff",border:"none",borderRadius:20,padding:"6px 11px",fontSize:"0.7rem",fontWeight:"bold",cursor:"pointer",display:"flex",alignItems:"center",gap:4}}>
               <PlusCircle size={11}/>Add
             </button>
           </div>
         </div>
         <div style={{display:"flex",overflowX:"auto",scrollbarWidth:"none"}}>
           {TABS.map(({id,label,Icon})=>(
-            <button key={id} onClick={()=>setTab(id)} style={{flexShrink:0,padding:"7px 12px",fontSize:"0.66rem",fontWeight:"600",letterSpacing:"0.06em",textTransform:"uppercase",background:"none",border:"none",cursor:"pointer",fontFamily:"Georgia,serif",color:tab===id?"#FAF7F2":"#7A6E60",borderBottom:tab===id?"2px solid #C9993A":"2px solid transparent",display:"flex",alignItems:"center",gap:3}}>
+            <button key={id} onClick={()=>setTab(id)} style={{flexShrink:0,padding:"7px 12px",fontSize:"0.66rem",fontWeight:"600",letterSpacing:"0.06em",textTransform:"uppercase",background:"none",border:"none",cursor:"pointer",fontFamily:"Georgia,serif",color:tab===id?"#FAF7F2":"#7A6E60",borderBottom:tab===id?"2px solid #818CF8":"2px solid transparent",display:"flex",alignItems:"center",gap:3}}>
               <Icon size={10}/>{label}
             </button>
           ))}
@@ -668,9 +674,9 @@ export default function App() {
     {tab!=="networth"&&(
       <div style={{padding:"11px 16px 0",maxWidth:700,margin:"0 auto"}}>
         <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:12,background:"#fff",border:"1px solid #DDD5C8",borderRadius:12,padding:"8px 16px"}}>
-          <button onClick={()=>month>0&&setMonth(m=>m-1)} style={{background:"#E8DFD0",border:"none",width:28,height:28,borderRadius:"50%",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",opacity:month===0?0.3:1}}><ChevronLeft size={14}/></button>
+          <button onClick={()=>month>0&&setMonth(m=>m-1)} style={{background:"#EEF2FF",border:"none",width:28,height:28,borderRadius:"50%",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",opacity:month===0?0.3:1}}><ChevronLeft size={14}/></button>
           <span style={{fontSize:"0.95rem",minWidth:130,textAlign:"center"}}>{MONTHS[month]} 2026</span>
-          <button onClick={()=>month<11&&setMonth(m=>m+1)} style={{background:"#E8DFD0",border:"none",width:28,height:28,borderRadius:"50%",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",opacity:month===11?0.3:1}}><ChevronRight size={14}/></button>
+          <button onClick={()=>month<11&&setMonth(m=>m+1)} style={{background:"#EEF2FF",border:"none",width:28,height:28,borderRadius:"50%",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",opacity:month===11?0.3:1}}><ChevronRight size={14}/></button>
         </div>
       </div>
     )}
@@ -679,27 +685,97 @@ export default function App() {
 
       {/* OVERVIEW */}
       {tab==="overview"&&<>
+        {/* Stat cards */}
         <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:9,marginBottom:13}}>
-          {[{l:"Income",v:fmt(income),c:"#4A6741"},{l:"Expenses",v:fmt(netExp),c:"#C0522A"},{l:"Saved",v:fmt(savings),c:savings>=0?"#C9993A":"#C0522A"}].map(({l,v,c})=>(
-            <div key={l} style={{background:"#fff",border:"1px solid #DDD5C8",borderRadius:12,padding:"12px 9px",textAlign:"center"}}>
-              <div style={{fontSize:"0.58rem",textTransform:"uppercase",letterSpacing:"0.08em",color:"#7A6E60",marginBottom:4}}>{l}</div>
-              <div style={{fontSize:"clamp(0.85rem,2.8vw,1.2rem)",color:c,fontWeight:"bold"}}>{v}</div>
+          {[{l:"Income",v:fmt(income),c:"#059669",bg:"#ECFDF5"},{l:"Expenses",v:fmt(netExp),c:"#DC2626",bg:"#FEF2F2"},{l:"Saved",v:fmt(savings),c:savings>=0?"#D97706":"#DC2626",bg:savings>=0?"#FFFBEB":"#FEF2F2"}].map(({l,v,c,bg})=>(
+            <div key={l} style={{background:bg,border:`1px solid ${c}22`,borderRadius:14,padding:"13px 9px",textAlign:"center"}}>
+              <div style={{fontSize:"0.58rem",textTransform:"uppercase",letterSpacing:"0.08em",color:"#6B7280",marginBottom:5}}>{l}</div>
+              <div style={{fontSize:"clamp(0.9rem,3vw,1.25rem)",color:c,fontWeight:"bold"}}>{v}</div>
             </div>
           ))}
         </div>
 
-        <div style={{background:"#fff",border:"1px solid #DDD5C8",borderRadius:12,padding:14,marginBottom:13}}>
-          <div style={{fontSize:"0.6rem",textTransform:"uppercase",letterSpacing:"0.08em",color:"#7A6E60",marginBottom:11}}>Budget vs. Actual — {MONTHS[month]}</div>
-          {CATEGORIES.map(cat=>{
-            const a=catTotals[cat]||0,b=BUDGET[cat],pct=Math.min((a/b)*100,108);
-            const over=a>b,warn=a/b>0.85&&!over,color=over?"#C0522A":warn?"#C9993A":"#4A6741";
-            return(<div key={cat} style={{marginBottom:8}}>
-              <div style={{display:"flex",justifyContent:"space-between",marginBottom:3,fontSize:"0.74rem",alignItems:"baseline"}}>
-                <span style={{fontWeight:500}}>{cat}</span>
-                <span style={{fontSize:"0.68rem",color:"#7A6E60"}}><span style={{color,fontWeight:600}}>{fmt(a)}</span> / {fmt(b)}</span>
+        {/* Key Insights */}
+        {(()=>{
+          const insights=[];
+          // Over budget categories
+          CATEGORIES.forEach(cat=>{
+            const a=catTotals[cat]||0,b=BUDGET[cat];
+            if(a>b) insights.push({type:"over",emoji:"🔴",msg:`${CAT_EMOJI[cat]} ${cat} is $${Math.round(a-b)} over budget (${((a/b)*100).toFixed(0)}% of $${b} target)`});
+          });
+          // Close to limit
+          CATEGORIES.forEach(cat=>{
+            const a=catTotals[cat]||0,b=BUDGET[cat];
+            if(a/b>0.85&&a<=b) insights.push({type:"warn",emoji:"🟡",msg:`${CAT_EMOJI[cat]} ${cat} is at ${((a/b)*100).toFixed(0)}% — only $${Math.round(b-a)} remaining`});
+          });
+          // Top spender
+          const topCat=CATEGORIES.reduce((best,c)=>catTotals[c]>catTotals[best]?c:best,CATEGORIES[0]);
+          if(catTotals[topCat]>0) insights.push({type:"info",emoji:"📊",msg:`${CAT_EMOJI[topCat]} ${topCat} is your biggest expense at ${fmt(catTotals[topCat])}`});
+          // Savings rate
+          if(income>0){
+            const rate=((income-netExp)/income*100);
+            if(rate>0) insights.push({type:"good",emoji:"💚",msg:`Saving ${rate.toFixed(0)}% of income this month — great work!`});
+            else insights.push({type:"over",emoji:"🔴",msg:`Spending exceeds income by ${fmt(Math.abs(income-netExp))} this month`});
+          }
+          if(insights.length===0) return null;
+          return(
+            <div style={{background:"#1E1B4B",borderRadius:14,padding:"14px 16px",marginBottom:13}}>
+              <div style={{fontSize:"0.6rem",textTransform:"uppercase",letterSpacing:"0.1em",color:"#818CF8",marginBottom:10}}>🔍 Key Insights — {MONTHS[month]}</div>
+              <div style={{display:"flex",flexDirection:"column",gap:7}}>
+                {insights.slice(0,4).map((ins,i)=>(
+                  <div key={i} style={{display:"flex",alignItems:"flex-start",gap:8,fontSize:"0.78rem",color:"#E0E7FF",lineHeight:1.4}}>
+                    <span style={{flexShrink:0}}>{ins.emoji}</span>
+                    <span>{ins.msg}</span>
+                  </div>
+                ))}
               </div>
-              <div style={{height:5,background:"#E8DFD0",borderRadius:4,overflow:"hidden"}}>
-                <div style={{height:"100%",width:`${pct}%`,background:color,borderRadius:4,transition:"width 0.7s"}}/>
+            </div>
+          );
+        })()}
+
+        {/* Budget total callout */}
+        <div style={{background:"#1E1B4B",borderRadius:14,padding:"12px 16px",marginBottom:13,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+          <div>
+            <div style={{fontSize:"0.6rem",textTransform:"uppercase",letterSpacing:"0.1em",color:"#A5B4FC",marginBottom:3}}>Monthly Budget</div>
+            <div style={{fontSize:"1.5rem",fontWeight:"bold",color:"#fff"}}>$9,000</div>
+          </div>
+          <div style={{textAlign:"right"}}>
+            <div style={{fontSize:"0.6rem",textTransform:"uppercase",letterSpacing:"0.1em",color:"#A5B4FC",marginBottom:3}}>Spent</div>
+            <div style={{fontSize:"1.5rem",fontWeight:"bold",color:netExp>9000?"#F87171":"#34D399"}}>{fmt(netExp)}</div>
+          </div>
+          <div style={{textAlign:"right"}}>
+            <div style={{fontSize:"0.6rem",textTransform:"uppercase",letterSpacing:"0.1em",color:"#A5B4FC",marginBottom:3}}>{netExp>9000?"Over":"Left"}</div>
+            <div style={{fontSize:"1.5rem",fontWeight:"bold",color:netExp>9000?"#F87171":"#34D399"}}>{fmt(Math.abs(9000-netExp))}</div>
+          </div>
+        </div>
+
+        {/* Budget vs Actual */}
+        <div style={{background:"#fff",border:"1px solid #E5E7EB",borderRadius:14,padding:16,marginBottom:13}}>
+          <div style={{fontSize:"0.6rem",textTransform:"uppercase",letterSpacing:"0.08em",color:"#9CA3AF",marginBottom:14}}>Budget vs. Actual — {MONTHS[month]}</div>
+          {CATEGORIES.map(cat=>{
+            const a=catTotals[cat]||0,b=BUDGET[cat];
+            const pct=Math.min((a/b)*100,100);
+            const over=a>b,warn=a/b>0.85&&!over;
+            const barColor=over?"#DC2626":warn?"#D97706":"#059669";
+            const remaining=b-a;
+            const emoji=CAT_EMOJI[cat]||"•";
+            return(<div key={cat} style={{marginBottom:14}}>
+              <div style={{display:"flex",justifyContent:"space-between",marginBottom:5,alignItems:"center"}}>
+                <span style={{fontSize:"0.88rem",fontWeight:600,display:"flex",alignItems:"center",gap:7}}>
+                  <span style={{fontSize:"1.1rem"}}>{emoji}</span>{cat}
+                </span>
+                <span style={{fontSize:"0.75rem",display:"flex",gap:8,alignItems:"center"}}>
+                  <span style={{color:barColor,fontWeight:700}}>{fmt(a)}</span>
+                  <span style={{color:"#D1D5DB"}}>/</span>
+                  <span style={{color:"#6B7280"}}>{fmt(b)}</span>
+                  <span style={{color:remaining>=0?"#059669":"#DC2626",fontWeight:600,fontSize:"0.7rem"}}>
+                    {remaining>=0?`${fmt(remaining)} left`:`${fmt(Math.abs(remaining))} over`}
+                  </span>
+                  <span style={{color:barColor,fontWeight:600,fontSize:"0.7rem"}}>{pct.toFixed(0)}%</span>
+                </span>
+              </div>
+              <div style={{height:14,background:"#F3F4F6",borderRadius:7,overflow:"hidden"}}>
+                <div style={{height:"100%",width:`${pct}%`,background:barColor,borderRadius:7,transition:"width 0.7s ease"}}/>
               </div>
             </div>);
           })}
@@ -712,21 +788,21 @@ export default function App() {
               <XAxis dataKey="month" tick={{fontSize:9}} axisLine={false} tickLine={false}/>
               <YAxis tick={{fontSize:9}} axisLine={false} tickLine={false} tickFormatter={fmtK} width={38}/>
               <Tooltip formatter={(v,n)=>[fmt(v),n]} contentStyle={{fontSize:10,borderRadius:8,border:"1px solid #DDD5C8"}} cursor={{fill:"rgba(0,0,0,0.03)"}}/>
-              <Bar dataKey="income" name="Income" fill="#4A6741" radius={[3,3,0,0]}/>
-              <Bar dataKey="expenses" name="Expenses" fill="#C0522A" radius={[3,3,0,0]}/>
+              <Bar dataKey="income" name="Income" fill="#059669" radius={[3,3,0,0]}/>
+              <Bar dataKey="expenses" name="Expenses" fill="#DC2626" radius={[3,3,0,0]}/>
             </BarChart>
           </ResponsiveContainer>
 
           <div style={{display:"flex",gap:12,justifyContent:"center",marginTop:6,marginBottom:14}}>
-            {[["Income","#4A6741"],["Expenses","#C0522A"]].map(([l,c])=>(
+            {[["Income","#059669"],["Expenses","#DC2626"]].map(([l,c])=>(
               <div key={l} style={{display:"flex",alignItems:"center",gap:4,fontSize:"0.66rem",color:"#7A6E60"}}>
                 <div style={{width:8,height:8,borderRadius:2,background:c}}/>{l}
               </div>
             ))}
           </div>
 
-          <div style={{borderTop:"1px solid #F0EAE0",paddingTop:13}}>
-            <div style={{fontSize:"0.6rem",textTransform:"uppercase",letterSpacing:"0.08em",color:"#7A6E60",marginBottom:10}}>Net Cash Flow</div>
+          <div style={{borderTop:"1px solid #E5E7EB",paddingTop:13}}>
+            <div style={{fontSize:"0.6rem",textTransform:"uppercase",letterSpacing:"0.08em",color:"#9CA3AF",marginBottom:10}}>Net Cash Flow</div>
             {(()=>{
               const maxAbs=Math.max(...trendData.map(d=>Math.abs((d.income||0)-(d.expenses||0))),1);
               return trendData.map(d=>{
@@ -736,12 +812,12 @@ export default function App() {
                 return(
                   <div key={d.month} style={{display:"flex",alignItems:"center",gap:8,marginBottom:6}}>
                     <div style={{width:24,fontSize:"0.63rem",color:"#7A6E60",flexShrink:0,textAlign:"right"}}>{d.month}</div>
-                    <div style={{flex:1,height:20,position:"relative",background:"#F7F3EE",borderRadius:4,overflow:"hidden"}}>
-                      <div style={{position:"absolute",left:"50%",top:0,bottom:0,width:1,background:"#DDD5C8",zIndex:1}}/>
+                    <div style={{flex:1,height:20,position:"relative",background:"#F3F4F6",borderRadius:4,overflow:"hidden"}}>
+                      <div style={{position:"absolute",left:"50%",top:0,bottom:0,width:1,background:"#D1D5DB",zIndex:1}}/>
                       <div style={{
                         position:"absolute",height:"100%",
                         width:barPct+"%",
-                        background:isPos?"#4A6741":"#C0522A",
+                        background:isPos?"#059669":"#DC2626",
                         borderRadius:isPos?"0 3px 3px 0":"3px 0 0 3px",
                         left:isPos?"50%":"auto",
                         right:isPos?"auto":"50%",
@@ -750,7 +826,7 @@ export default function App() {
                       <div style={{
                         position:"absolute",
                         fontSize:"0.61rem",fontWeight:"bold",
-                        color:isPos?"#2A4A26":"#7A2810",
+                        color:isPos?"#065F46":"#991B1B",
                         left:isPos?"calc(50% + 5px)":"auto",
                         right:isPos?"auto":"calc(50% + 5px)",
                         top:"50%",transform:"translateY(-50%)",
@@ -764,61 +840,6 @@ export default function App() {
               });
             })()}
           </div>
-        </div>
-      </>}
-
-      {/* SPENDING */}
-      {tab==="spending"&&<>
-        <div style={{background:"#fff",border:"1px solid #DDD5C8",borderRadius:12,padding:14,marginBottom:13}}>
-          <div style={{fontSize:"0.6rem",textTransform:"uppercase",letterSpacing:"0.08em",color:"#7A6E60",marginBottom:11}}>Spending Breakdown — {MONTHS[month]}</div>
-          <div style={{display:"flex",alignItems:"center",gap:12}}>
-            {/* Legend — top left, no amounts */}
-            <div style={{display:"flex",flexDirection:"column",gap:5,flexShrink:0,minWidth:90}}>
-              {donutData.map(d=>(
-                <div key={d.fullName} style={{display:"flex",alignItems:"center",gap:5}}>
-                  <div style={{width:8,height:8,borderRadius:2,background:d.color,flexShrink:0}}/>
-                  <span style={{fontSize:"0.68rem",color:"#2C2416"}}>{d.name}</span>
-                </div>
-              ))}
-            </div>
-            {/* Donut — larger */}
-            <div style={{flex:1,display:"flex",justifyContent:"center"}}>
-              <RePieChart width={220} height={220}>
-                <Pie data={donutData} cx={110} cy={110} innerRadius={55} outerRadius={105} dataKey="value" paddingAngle={2}
-                  label={({cx,cy,midAngle,innerRadius,outerRadius,value})=>{
-                    const RADIAN=Math.PI/180;
-                    const r=innerRadius+(outerRadius-innerRadius)*0.5;
-                    const x=cx+r*Math.cos(-midAngle*RADIAN);
-                    const y=cy+r*Math.sin(-midAngle*RADIAN);
-                    const rounded=Math.round(value/100)*100;
-                    if(value<120) return null;
-                    return(<text x={x} y={y} fill="#fff" textAnchor="middle" dominantBaseline="central" fontSize={9} fontWeight="bold" fontFamily="Georgia,serif">${rounded>=1000?(rounded/1000).toFixed(1)+"k":rounded}</text>);
-                  }}
-                  labelLine={false}>
-                  {donutData.map((e,i)=><Cell key={i} fill={e.color}/>)}
-                </Pie>
-                <Tooltip formatter={(v,n)=>[fmt(v),n]} contentStyle={{fontSize:10,borderRadius:8}}/>
-              </RePieChart>
-            </div>
-          </div>
-        </div>
-        <div style={{background:"#fff",border:"1px solid #DDD5C8",borderRadius:12,padding:14}}>
-          <div style={{fontSize:"0.6rem",textTransform:"uppercase",letterSpacing:"0.08em",color:"#7A6E60",marginBottom:11}}>Category Details</div>
-          {CATEGORIES.map(cat=>{
-            const a=catTotals[cat]||0,b=BUDGET[cat],pct=Math.min((a/b)*100,108);
-            const over=a>b,warn=a/b>0.85&&!over,color=over?"#C0522A":warn?"#C9993A":"#4A6741";
-            return(<div key={cat} style={{marginBottom:10}}>
-              <div style={{display:"flex",justifyContent:"space-between",marginBottom:3,fontSize:"0.74rem",alignItems:"center"}}>
-                <span style={{fontWeight:500,display:"flex",alignItems:"center",gap:5}}>
-                  <span style={{width:7,height:7,borderRadius:"50%",background:CAT_COLORS[cat],display:"inline-block"}}/>{cat}
-                </span>
-                <span style={{fontSize:"0.68rem",color:"#7A6E60"}}><span style={{color,fontWeight:600}}>{fmt(a)}</span> / {fmt(b)}{a>0&&<span style={{marginLeft:4,color,fontSize:"0.63rem"}}>{((a/b)*100).toFixed(0)}%</span>}</span>
-              </div>
-              <div style={{height:5,background:"#E8DFD0",borderRadius:4,overflow:"hidden"}}>
-                <div style={{height:"100%",width:`${pct}%`,background:color,borderRadius:4}}/>
-              </div>
-            </div>);
-          })}
         </div>
       </>}
 
@@ -842,8 +863,8 @@ export default function App() {
         {/* Category filter chips */}
         <div style={{display:"flex",gap:5,overflowX:"auto",scrollbarWidth:"none",marginBottom:8,paddingBottom:2}}>
           {["All","Income",...CATEGORIES].map(c=>(
-            <button key={c} onClick={()=>{setCatF(c);setPage(30);}} style={{flexShrink:0,padding:"4px 10px",borderRadius:20,fontSize:"0.64rem",fontWeight:600,border:"1px solid",cursor:"pointer",fontFamily:"Georgia,serif",borderColor:catF===c?"#2C2416":"#DDD5C8",background:catF===c?"#2C2416":"#fff",color:catF===c?"#FAF7F2":"#7A6E60"}}>
-              {c.length>13?c.slice(0,11)+"…":c}
+            <button key={c} onClick={()=>{setCatF(c);setPage(30);}} style={{flexShrink:0,padding:"4px 10px",borderRadius:20,fontSize:"0.64rem",fontWeight:600,border:"1px solid",cursor:"pointer",fontFamily:"Georgia,serif",borderColor:catF===c?"#1E1B4B":"#DDD5C8",background:catF===c?"#1E1B4B":"#fff",color:catF===c?"#FAF7F2":"#6B7280"}}>
+              {CAT_EMOJI[c]?`${CAT_EMOJI[c]} ${c.length>10?c.slice(0,9)+"…":c}`:c}
             </button>
           ))}
         </div>
@@ -884,60 +905,60 @@ export default function App() {
       {tab==="networth"&&<>
 
         {/* Hero */}
-        <div style={{background:"#2C2416",color:"#FAF7F2",borderRadius:16,padding:"20px 18px",marginBottom:13,textAlign:"center"}}>
-          <div style={{fontSize:"0.6rem",textTransform:"uppercase",letterSpacing:"0.1em",color:"#A09080",marginBottom:5}}>Total Net Worth</div>
+        <div style={{background:"#1E1B4B",color:"#FAF7F2",borderRadius:16,padding:"20px 18px",marginBottom:13,textAlign:"center"}}>
+          <div style={{fontSize:"0.6rem",textTransform:"uppercase",letterSpacing:"0.1em",color:"#818CF8",marginBottom:5}}>Total Net Worth</div>
           <div style={{fontSize:"clamp(1.8rem,7vw,2.6rem)",fontWeight:"bold"}}>$836,050</div>
-          <div style={{fontSize:"0.65rem",color:"#A09080",marginTop:4}}>As of March 2026 · Total Assets $1,153,332</div>
+          <div style={{fontSize:"0.65rem",color:"#818CF8",marginTop:4}}>As of March 2026 · Total Assets $1,153,332</div>
         </div>
 
-        {/* Summary cards — one set only */}
+        {/* Summary cards */}
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:9,marginBottom:13}}>
-          {[["Total Assets","$1,153,332","Cash + Investments + RE","#4A6741"],["Total Debt","$317,282","Mortgages + Credit","#C0522A"]].map(([l,v,s,c])=>(
-            <div key={l} style={{background:"#fff",border:"1px solid #DDD5C8",borderRadius:12,padding:"13px 12px",borderTop:`3px solid ${c}`}}>
-              <div style={{fontSize:"0.58rem",textTransform:"uppercase",letterSpacing:"0.08em",color:"#7A6E60",marginBottom:5}}>{l}</div>
-              <div style={{fontSize:"1.1rem",color:c,fontWeight:"bold"}}>{v}</div>
-              <div style={{fontSize:"0.62rem",color:"#A09080",marginTop:2}}>{s}</div>
-            </div>
-          ))}
+          <div style={{background:"#ECFDF5",border:"1px solid #6EE7B7",borderRadius:14,padding:"13px 12px"}}>
+            <div style={{fontSize:"0.58rem",textTransform:"uppercase",letterSpacing:"0.08em",color:"#059669",marginBottom:5}}>Total Assets</div>
+            <div style={{fontSize:"1.15rem",color:"#065F46",fontWeight:"bold"}}>$1,153,332</div>
+            <div style={{fontSize:"0.62rem",color:"#6B7280",marginTop:2}}>Cash + Investments + RE</div>
+          </div>
+          <div style={{background:"#FEF2F2",border:"1px solid #FCA5A5",borderRadius:14,padding:"13px 12px"}}>
+            <div style={{fontSize:"0.58rem",textTransform:"uppercase",letterSpacing:"0.08em",color:"#DC2626",marginBottom:5}}>Total Debt</div>
+            <div style={{fontSize:"1.15rem",color:"#991B1B",fontWeight:"bold"}}>$317,282</div>
+            <div style={{fontSize:"0.62rem",color:"#6B7280",marginTop:2}}>Mortgages + Credit</div>
+          </div>
         </div>
 
-        {/* Stacked balance bar: Assets (Cash + Investments + RE) with Liabilities overlay */}
-        <div style={{background:"#fff",border:"1px solid #DDD5C8",borderRadius:12,padding:14,marginBottom:13}}>
-          <div style={{fontSize:"0.6rem",textTransform:"uppercase",letterSpacing:"0.08em",color:"#7A6E60",marginBottom:14}}>What You Own vs. What You Owe</div>
+        {/* What You Own vs What You Owe */}
+        <div style={{background:"#fff",border:"1px solid #E5E7EB",borderRadius:14,padding:16,marginBottom:13}}>
+          <div style={{fontSize:"0.6rem",textTransform:"uppercase",letterSpacing:"0.08em",color:"#9CA3AF",marginBottom:14}}>What You Own vs. What You Owe</div>
           {(()=>{
             const total=1153332;
             const segments=[
-              {label:"Cash",value:50832,color:"#3A6B8A"},
-              {label:"Investments",value:217499,color:"#4A6741"},
-              {label:"Real Estate",value:885001,color:"#C9993A"},
+              {label:"Cash",value:50832,color:"#0891B2"},
+              {label:"Investments",value:217499,color:"#4F46E5"},
+              {label:"Real Estate",value:885001,color:"#D97706"},
             ];
             const liabilities=317282;
             const liabPct=(liabilities/total)*100;
             return(<>
-              {/* Asset stacked bar */}
-              <div style={{height:72,borderRadius:8,overflow:"hidden",display:"flex",marginBottom:6}}>
+              <div style={{height:56,borderRadius:10,overflow:"hidden",display:"flex",marginBottom:8}}>
                 {segments.map(s=>(
                   <div key={s.label} style={{width:`${(s.value/total)*100}%`,background:s.color,height:"100%",display:"flex",alignItems:"center",justifyContent:"center",overflow:"hidden"}}>
-                    {(s.value/total)>0.08&&<span style={{fontSize:"0.6rem",fontWeight:"bold",color:"#fff",whiteSpace:"nowrap",padding:"0 4px"}}>{s.label}</span>}
+                    {(s.value/total)>0.07&&<span style={{fontSize:"0.65rem",fontWeight:"bold",color:"#fff",whiteSpace:"nowrap",padding:"0 6px"}}>{s.label}</span>}
                   </div>
                 ))}
               </div>
-              {/* Liabilities overlay bar — right-aligned red */}
-              <div style={{height:72,borderRadius:6,background:"#F0EAE0",marginBottom:14,position:"relative",overflow:"hidden"}}>
-                <div style={{position:"absolute",right:0,top:0,bottom:0,width:`${liabPct}%`,background:"#C0522A",borderRadius:"6px 0 0 6px",opacity:0.85,display:"flex",alignItems:"center",justifyContent:"center"}}>
-                  <span style={{fontSize:"0.58rem",fontWeight:"bold",color:"#fff",whiteSpace:"nowrap",padding:"0 4px"}}>Debt {liabPct.toFixed(0)}%</span>
+              <div style={{height:56,borderRadius:10,background:"#F3F4F6",marginBottom:14,position:"relative",overflow:"hidden"}}>
+                <div style={{position:"absolute",right:0,top:0,bottom:0,width:`${liabPct}%`,background:"#DC2626",borderRadius:"10px 0 0 10px",display:"flex",alignItems:"center",justifyContent:"center"}}>
+                  <span style={{fontSize:"0.65rem",fontWeight:"bold",color:"#fff",whiteSpace:"nowrap",padding:"0 8px"}}>Debt {liabPct.toFixed(0)}%</span>
                 </div>
-                <div style={{position:"absolute",left:0,top:0,bottom:0,width:`${100-liabPct}%`,display:"flex",alignItems:"center",paddingLeft:6}}>
-                  <span style={{fontSize:"0.58rem",fontWeight:"bold",color:"#4A6741",whiteSpace:"nowrap"}}>Net Worth {(100-liabPct).toFixed(0)}%</span>
+                <div style={{position:"absolute",left:0,top:0,bottom:0,width:`${100-liabPct}%`,display:"flex",alignItems:"center",paddingLeft:10}}>
+                  <span style={{fontSize:"0.65rem",fontWeight:"bold",color:"#059669",whiteSpace:"nowrap"}}>Net Worth {(100-liabPct).toFixed(0)}%</span>
                 </div>
               </div>
-              {/* Legend */}
               <div style={{display:"flex",flexWrap:"wrap",gap:10,justifyContent:"center"}}>
-                {[...segments,{label:"Liabilities",value:liabilities,color:"#C0522A"}].map(s=>(
-                  <div key={s.label} style={{display:"flex",alignItems:"center",gap:4,fontSize:"0.68rem",color:"#7A6E60"}}>
-                    <div style={{width:8,height:8,borderRadius:2,background:s.color,flexShrink:0}}/>
+                {[...segments,{label:"Liabilities",value:liabilities,color:"#DC2626"}].map(s=>(
+                  <div key={s.label} style={{display:"flex",alignItems:"center",gap:4,fontSize:"0.7rem",color:"#6B7280"}}>
+                    <div style={{width:9,height:9,borderRadius:3,background:s.color,flexShrink:0}}/>
                     <span>{s.label}</span>
-                    <span style={{fontWeight:"bold",color:"#2C2416"}}>${Math.round(s.value/1000)}k</span>
+                    <span style={{fontWeight:"bold",color:"#111827"}}>${Math.round(s.value/1000)}k</span>
                   </div>
                 ))}
               </div>
@@ -945,40 +966,62 @@ export default function App() {
           })()}
         </div>
 
-        {/* Treemap — Assets by Category */}
-        <div style={{background:"#fff",border:"1px solid #DDD5C8",borderRadius:12,padding:14,marginBottom:13}}>
-          <div style={{fontSize:"0.6rem",textTransform:"uppercase",letterSpacing:"0.08em",color:"#7A6E60",marginBottom:11}}>Assets by Category</div>
+        {/* True proportional treemap — 2 column layout for squarish tiles */}
+        <div style={{background:"#fff",border:"1px solid #E5E7EB",borderRadius:14,padding:16,marginBottom:13}}>
+          <div style={{fontSize:"0.6rem",textTransform:"uppercase",letterSpacing:"0.08em",color:"#9CA3AF",marginBottom:14}}>Assets by Category</div>
           {(()=>{
-            const total=1153332;
-            const items=[
-              {label:"Real Estate",sub:"76.7%",value:885000,color:"#C9993A"},
-              {label:"Investments",sub:"18.9%",value:217499,color:"#4A6741"},
-              {label:"Cash",sub:"4.4%",value:50832,color:"#3A6B8A"},
-            ];
-            // Treemap: RE takes top full row, Investments + Cash split the bottom row
+            const total=1153330;
+            // Left column: Real Estate (76.7% of total) — tall
+            const reTotal=885000;
+            const rightTotal=total-reTotal; // investments + cash = 267500
+            const invTotal=217500;
+            const cashTotal=50840;
+            const H=420; // total height
+            const invH=Math.round((invTotal/rightTotal)*H);
+            const cashH=H-invH;
             return(
-              <div style={{display:"flex",flexDirection:"column",gap:6}}>
-                {/* Real Estate — full width tall block */}
-                <div style={{background:"#C9993A",borderRadius:10,height:72,padding:"0 16px",display:"flex",justifyContent:"space-between",alignItems:"center",boxSizing:"border-box"}}>
-                  <div>
-                    <div style={{fontSize:"0.72rem",fontWeight:"bold",color:"#fff",marginBottom:3}}>Real Estate</div>
-                    <div style={{fontSize:"1.3rem",fontWeight:"bold",color:"#fff"}}>$885k</div>
-                  </div>
-                  <div style={{fontSize:"1.8rem",fontWeight:"bold",color:"rgba(255,255,255,0.25)"}}>76.7%</div>
-                </div>
-                {/* Investments + Cash side by side */}
-                <div style={{display:"flex",gap:6}}>
-                  <div style={{flex:"0 0 78%",background:"#4A6741",borderRadius:10,height:72,padding:"0 12px",display:"flex",justifyContent:"space-between",alignItems:"center",boxSizing:"border-box"}}>
-                    <div>
-                      <div style={{fontSize:"0.68rem",fontWeight:"bold",color:"#fff",marginBottom:2}}>Investments</div>
-                      <div style={{fontSize:"1.05rem",fontWeight:"bold",color:"#fff"}}>$217k</div>
+              <div style={{display:"flex",gap:3,height:H,borderRadius:10,overflow:"hidden"}}>
+                {/* LEFT: Real Estate — 3 stacked tiles proportional to value */}
+                <div style={{flex:reTotal,display:"flex",flexDirection:"column",gap:3}}>
+                  {[
+                    {label:"SW 79th",sub:"Primary Home",value:425000,color:"#92400E"},
+                    {label:"R5",sub:"Rental",value:235000,color:"#D97706"},
+                    {label:"F314",sub:"Rental",value:225000,color:"#B45309"},
+                  ].map(item=>(
+                    <div key={item.label} style={{flex:item.value,background:item.color,padding:"10px 12px",display:"flex",flexDirection:"column",justifyContent:"space-between",minHeight:0}}>
+                      <div style={{fontSize:"0.58rem",fontWeight:"600",color:"rgba(255,255,255,0.65)",letterSpacing:"0.05em"}}>{item.sub}</div>
+                      <div>
+                        <div style={{fontSize:"0.85rem",fontWeight:"bold",color:"#fff"}}>{item.label}</div>
+                        <div style={{fontSize:"0.72rem",color:"rgba(255,255,255,0.85)"}}>${Math.round(item.value/1000)}k</div>
+                      </div>
                     </div>
-                    <div style={{fontSize:"1.2rem",fontWeight:"bold",color:"rgba(255,255,255,0.25)"}}>18.9%</div>
+                  ))}
+                </div>
+                {/* RIGHT: Investments + Cash stacked */}
+                <div style={{flex:rightTotal,display:"flex",flexDirection:"column",gap:3}}>
+                  {/* Investments — broken into 3 tiles */}
+                  <div style={{flex:invTotal,display:"flex",flexDirection:"column",gap:3}}>
+                    {[
+                      {label:"Retirement",sub:"401k / IRA",value:182840,color:"#1D4ED8"},
+                      {label:"529 + HSA",sub:"Educ. & Health",value:25670,color:"#2563EB"},
+                      {label:"Taxable",sub:"Brokerage",value:8990,color:"#3B82F6"},
+                    ].map(item=>(
+                      <div key={item.label} style={{flex:item.value,background:item.color,padding:"8px 10px",display:"flex",flexDirection:"column",justifyContent:"space-between",minHeight:0,overflow:"hidden"}}>
+                        <div style={{fontSize:"0.56rem",fontWeight:"600",color:"rgba(255,255,255,0.65)",letterSpacing:"0.04em",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{item.sub}</div>
+                        <div>
+                          <div style={{fontSize:"0.78rem",fontWeight:"bold",color:"#fff",whiteSpace:"nowrap"}}>{item.label}</div>
+                          <div style={{fontSize:"0.68rem",color:"rgba(255,255,255,0.85)"}}>${Math.round(item.value/1000)}k</div>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                  <div style={{flex:1,background:"#3A6B8A",borderRadius:10,height:72,padding:"0 8px",display:"flex",flexDirection:"column",justifyContent:"center",gap:4,boxSizing:"border-box"}}>
-                    <div style={{fontSize:"0.65rem",fontWeight:"bold",color:"#fff"}}>Cash</div>
-                    <div style={{fontSize:"0.9rem",fontWeight:"bold",color:"#fff"}}>$51k</div>
-                    <div style={{fontSize:"0.75rem",fontWeight:"bold",color:"rgba(255,255,255,0.3)"}}>4.4%</div>
+                  {/* Cash tile */}
+                  <div style={{flex:cashTotal,background:"#059669",padding:"10px 12px",display:"flex",flexDirection:"column",justifyContent:"space-between",minHeight:0}}>
+                    <div style={{fontSize:"0.58rem",fontWeight:"600",color:"rgba(255,255,255,0.65)",letterSpacing:"0.05em"}}>💵 Checking + EF</div>
+                    <div>
+                      <div style={{fontSize:"0.85rem",fontWeight:"bold",color:"#fff"}}>Cash</div>
+                      <div style={{fontSize:"0.72rem",color:"rgba(255,255,255,0.85)"}}>$51k</div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -986,19 +1029,21 @@ export default function App() {
           })()}
         </div>
 
-        {/* Detail tables */}
+        {/* Detail tables — rounded to nearest $10 */}
         {[
-          ["Cash & Checking",[["Checking #3344","$5,339"],["Emergency Fund","$45,250"],["Properties #9501","$238"],["UCU Savings","$5"],["Total Cash","$50,832",true]]],
-          ["Investments",[["Fidelity 401k","$114,494"],["Roth IRA","$33,566"],["Traditional IRA","$23,239"],["Tasha Traditional","$11,543"],["HSA + 529s","$25,672"],["Robinhood + Tasha Roth","$8,985"],["Total Investments","$217,499",true]]],
-          ["Real Estate",[["20721 SW 79th (Primary)","$425,000"],["7730 Camino Real F314","$225,000"],["9459 SW 76th R5","$235,000"],["Total RE","$885,000",true]]],
-          ["Liabilities",[["Mortgage 20721 SW 79th","$172,704",false,true],["Mortgage R5","$98,230",false,true],["Mortgage F314","$34,071",false,true],["Navy Federal","$2,938",false,true],["Amazon Visa","$4,439",false,true],["Total Liabilities","$317,282",true,true]]],
+          ["💵 Cash & Checking",[["Checking #3344","$5,340"],["Emergency Fund","$45,250"],["Properties #9501","$240"],["UCU Savings","$10"],["Total Cash","$50,840",true]]],
+          ["📈 Retirement",[["Fidelity 401k","$114,490"],["Roth IRA","$33,570"],["Traditional IRA","$23,240"],["Tasha Traditional","$11,540"],["Total Retirement","$182,840",true]]],
+          ["🎓 529 + HSA",[["Ameriflex HSA","$8,880"],["Vanguard 529 (×2)","$16,790"],["Total 529 + HSA","$25,670",true]]],
+          ["📊 Taxable Brokerage",[["Robinhood","$4,410"],["Tasha Roth","$4,580"],["Total Taxable","$8,990",true]]],
+          ["🏘️ Real Estate",[["20721 SW 79th (Primary)","$425,000"],["7730 Camino Real F314","$225,000"],["9459 SW 76th St. R5","$235,000"],["Total RE","$885,000",true]]],
+          ["🏦 Liabilities",[["Mortgage SW 79th","$172,700",false,true],["Mortgage R5","$98,230",false,true],["Mortgage F314","$34,070",false,true],["Navy Federal","$2,940",false,true],["Amazon Visa","$4,440",false,true],["Total Liabilities","$317,280",true,true]]],
         ].map(([sec,rows])=>(
-          <div key={sec} style={{background:"#fff",border:"1px solid #DDD5C8",borderRadius:12,padding:"12px 14px",marginBottom:9}}>
-            <div style={{fontSize:"0.6rem",textTransform:"uppercase",letterSpacing:"0.08em",color:"#7A6E60",marginBottom:8,fontWeight:600}}>{sec}</div>
+          <div key={sec} style={{background:"#fff",border:"1px solid #E5E7EB",borderRadius:14,padding:"12px 14px",marginBottom:9}}>
+            <div style={{fontSize:"0.72rem",fontWeight:"bold",color:"#1F2937",marginBottom:10}}>{sec}</div>
             {rows.map(([label,value,bold,red])=>(
-              <div key={label} style={{display:"flex",justifyContent:"space-between",padding:"6px 0",borderBottom:"1px solid #F0EAE0",fontSize:"0.78rem"}}>
-                <span style={{color:bold?"#2C2416":"#7A6E60",fontWeight:bold?"bold":"normal"}}>{label}</span>
-                <span style={{fontWeight:bold?"bold":"600",color:red?"#C0522A":"#2C2416"}}>{value}</span>
+              <div key={label} style={{display:"flex",justifyContent:"space-between",padding:"7px 0",borderBottom:"1px solid #F3F4F6",fontSize:"0.82rem"}}>
+                <span style={{color:bold?"#111827":"#6B7280",fontWeight:bold?"700":"normal"}}>{label}</span>
+                <span style={{fontWeight:bold?"700":"600",color:red?"#DC2626":"#111827"}}>{value}</span>
               </div>
             ))}
           </div>
