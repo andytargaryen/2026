@@ -466,6 +466,8 @@ function parseHernandezXlsx(file) {
     fr.onload=e=>{
       try {
         const wb=XLSX.read(e.target.result,{type:"array",cellDates:true});
+
+        // ── Parse Transactions ──
         const ws=wb.Sheets["Transactions"];
         if (!ws) { reject("Could not find 'Transactions' sheet."); return; }
         const raw=XLSX.utils.sheet_to_json(ws,{header:1,defval:""});
@@ -476,20 +478,72 @@ function parseHernandezXlsx(file) {
         }
         for (let i=start;i<raw.length;i++) {
           const r=raw[i];
-          // Expenses: A=date, B=desc, C=amount, D=category
           const ed=parseXlsxDate(r[0]), ea=parseFloat(r[2]);
           const edesc=String(r[1]||"").trim();
           if (ed&&edesc&&!isNaN(ea)&&ea!==0) {
             out.push({id:genId(),date:ed,desc:edesc,amount:ea,cat:normCat(r[3]),type:"expense"});
           }
-          // Income: G=date, H=desc, I=amount
           const id2=parseXlsxDate(r[6]), ia=parseFloat(r[8]);
           const idesc=String(r[7]||"").trim();
           if (id2&&idesc&&!isNaN(ia)&&ia>0&&!idesc.toLowerCase().includes("total")) {
             out.push({id:genId(),date:id2,desc:idesc,amount:ia,cat:"Income",type:"income"});
           }
         }
-        resolve(out);
+
+        // ── Parse Balance Sheet ──
+        let balanceSheet = null;
+        const bsSheet = wb.Sheets["Balance Sheet"];
+        if (bsSheet) {
+          try {
+            const bs = XLSX.utils.sheet_to_json(bsSheet,{header:1,defval:""});
+            const getVal = (label) => {
+              for (const row of bs) {
+                if (String(row[0]).trim().toLowerCase().includes(label.toLowerCase())) {
+                  const v = parseFloat(row[1]);
+                  if (!isNaN(v)) return v;
+                }
+              }
+              return null;
+            };
+            balanceSheet = {
+              checking:     getVal("Checking #3344"),
+              properties:   getVal("Properties #9501"),
+              emergencyFund:getVal("Emergency Fund"),
+              ucuSavings:   getVal("UCU Savings"),
+              totalCash:    getVal("Total Cash"),
+              fidelity401k: getVal("Fidelity"),
+              rothIRA:      getVal("Roth 712"),
+              traditionalIRA:getVal("Traditional 070"),
+              tashaTraditional:getVal("Tasha Traditional"),
+              ameriflexHSA: getVal("Ameriflex HSA"),
+              vanguard529a: null,
+              vanguard529b: null,
+              robinhood:    getVal("Robinhood"),
+              tashaRoth:    getVal("Tasha Roth"),
+              totalInvestments: getVal("Total Investments"),
+              sw79th:       getVal("20721 SW 79th"),
+              f314:         getVal("7730 Camino Real"),
+              r5:           getVal("9459 SW 76th"),
+              totalRE:      getVal("Total RE"),
+              totalAssets:  getVal("Total Assets"),
+              navyFederal:  getVal("Navy Federal"),
+              amazonVisa:   getVal("Amazon Visa"),
+              totalShortTermDebt: getVal("Total Short Term Debt"),
+              mortgageF314: getVal("Mortgage F314"),
+              mortgageR5:   getVal("Mortgage R5"),
+              mortgage20721:getVal("Mortgage 20721"),
+              totalLongTermDebt: getVal("Total Long Term Debt"),
+              totalDebt:    getVal("Total Debt"),
+              netWorth:     getVal("Net Worth"),
+            };
+            // Handle two Vanguard 529 rows
+            const v529rows = bs.filter(r=>String(r[0]).includes("VANGUARD 529"));
+            if (v529rows.length>=1) balanceSheet.vanguard529a = parseFloat(v529rows[0][1])||0;
+            if (v529rows.length>=2) balanceSheet.vanguard529b = parseFloat(v529rows[1][1])||0;
+          } catch(e) { console.warn("Balance sheet parse error:", e); }
+        }
+
+        resolve({transactions: out, balanceSheet});
       } catch(err) { reject("Parse error: "+err.message); }
     };
     fr.onerror=()=>reject("Could not read file.");
@@ -505,6 +559,7 @@ export default function App() {
   const [month,setMonth]=useState(2);
   const [showAdd,setShowAdd]=useState(false);
   const [showImport,setShowImport]=useState(false);
+  const [bs,setBs]=useState(null); // live balance sheet from Excel
   const [importStatus,setImportStatus]=useState(null);
   const [importing,setImporting]=useState(false);
   const [search,setSearch]=useState("");
@@ -528,6 +583,11 @@ export default function App() {
         console.error("Load error:", e);
         setTxns(SEED);
       }
+      // Load cached balance sheet
+      try {
+        const cached = localStorage.getItem("hfb_bs");
+        if (cached) setBs(JSON.parse(cached));
+      } catch(e){}
       setLoading(false);
     }
     load();
@@ -563,8 +623,14 @@ export default function App() {
     const f=e.target.files?.[0]; if(!f)return;
     setImporting(true); setImportStatus(null);
     try {
-      const parsed=await parseHernandezXlsx(f);
+      const result=await parseHernandezXlsx(f);
+      const parsed=result.transactions||result;
       if(!parsed.length){ setImportStatus({error:"No transactions found. Check the file has a 'Transactions' sheet."}); setImporting(false); return; }
+      // Save balance sheet if parsed
+      if(result.balanceSheet){
+        setBs(result.balanceSheet);
+        localStorage.setItem("hfb_bs", JSON.stringify(result.balanceSheet));
+      }
       const keys=new Set(txns.map(t=>`${t.date}|${t.desc}|${t.amount}`));
       const newOnes=parsed.filter(t=>!keys.has(`${t.date}|${t.desc}|${t.amount}`));
       const dupes=parsed.length-newOnes.length;
@@ -903,24 +969,59 @@ export default function App() {
 
       {/* NET WORTH */}
       {tab==="networth"&&<>
-
+        {(()=>{
+          // Live values from balance sheet import, with fallbacks
+          const nw   = bs?.netWorth      || 836050;
+          const ta   = bs?.totalAssets   || 1153332;
+          const td   = bs?.totalDebt     || 317282;
+          const tc   = bs?.totalCash     || 50832;
+          const ti   = bs?.totalInvestments || 217499;
+          const tre  = bs?.totalRE       || 885000;
+          const chk  = bs?.checking      || 5339;
+          const prop = bs?.properties    || 238;
+          const ef   = bs?.emergencyFund || 45250;
+          const ucu  = bs?.ucuSavings    || 5;
+          const f401 = bs?.fidelity401k  || 114494;
+          const roth = bs?.rothIRA       || 33566;
+          const trad = bs?.traditionalIRA|| 23239;
+          const tTrad= bs?.tashaTraditional||11543;
+          const hsa  = bs?.ameriflexHSA  || 8883;
+          const v529a= bs?.vanguard529a  || 8561;
+          const v529b= bs?.vanguard529b  || 8228;
+          const rob  = bs?.robinhood     || 4406;
+          const tRoth= bs?.tashaRoth     || 4579;
+          const sw79 = bs?.sw79th        || 425000;
+          const f314v= bs?.f314          || 225000;
+          const r5v  = bs?.r5            || 235000;
+          const navy = bs?.navyFederal   || 2938;
+          const amz  = bs?.amazonVisa    || 4439;
+          const mF314= bs?.mortgageF314  || 34071;
+          const mR5  = bs?.mortgageR5    || 98230;
+          const m79  = bs?.mortgage20721 || 172704;
+          const retirement = f401+roth+trad+tTrad;
+          const savings529hsa = hsa+v529a+v529b;
+          const taxable = rob+tRoth;
+          const fmt10 = v => "$"+Math.round(v/10)*10 >= 1000
+            ? "$"+(Math.round(v/10)*10).toLocaleString()
+            : "$"+(Math.round(v/10)*10).toLocaleString();
+          return(<>
         {/* Hero */}
         <div style={{background:"#1E1B4B",color:"#FAF7F2",borderRadius:16,padding:"20px 18px",marginBottom:13,textAlign:"center"}}>
           <div style={{fontSize:"0.6rem",textTransform:"uppercase",letterSpacing:"0.1em",color:"#818CF8",marginBottom:5}}>Total Net Worth</div>
-          <div style={{fontSize:"clamp(1.8rem,7vw,2.6rem)",fontWeight:"bold"}}>$836,050</div>
-          <div style={{fontSize:"0.65rem",color:"#818CF8",marginTop:4}}>As of March 2026 · Total Assets $1,153,332</div>
+          <div style={{fontSize:"clamp(1.8rem,7vw,2.6rem)",fontWeight:"bold"}}>${Math.round(nw).toLocaleString()}</div>
+          <div style={{fontSize:"0.65rem",color:"#818CF8",marginTop:4}}>Total Assets ${Math.round(ta).toLocaleString()}{bs?" · Live from Excel":" · As of March 2026"}</div>
         </div>
 
         {/* Summary cards */}
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:9,marginBottom:13}}>
           <div style={{background:"#ECFDF5",border:"1px solid #6EE7B7",borderRadius:14,padding:"13px 12px"}}>
             <div style={{fontSize:"0.58rem",textTransform:"uppercase",letterSpacing:"0.08em",color:"#059669",marginBottom:5}}>Total Assets</div>
-            <div style={{fontSize:"1.15rem",color:"#065F46",fontWeight:"bold"}}>$1,153,332</div>
+            <div style={{fontSize:"1.15rem",color:"#065F46",fontWeight:"bold"}}>${Math.round(ta).toLocaleString()}</div>
             <div style={{fontSize:"0.62rem",color:"#6B7280",marginTop:2}}>Cash + Investments + RE</div>
           </div>
           <div style={{background:"#FEF2F2",border:"1px solid #FCA5A5",borderRadius:14,padding:"13px 12px"}}>
             <div style={{fontSize:"0.58rem",textTransform:"uppercase",letterSpacing:"0.08em",color:"#DC2626",marginBottom:5}}>Total Debt</div>
-            <div style={{fontSize:"1.15rem",color:"#991B1B",fontWeight:"bold"}}>$317,282</div>
+            <div style={{fontSize:"1.15rem",color:"#991B1B",fontWeight:"bold"}}>${Math.round(td).toLocaleString()}</div>
             <div style={{fontSize:"0.62rem",color:"#6B7280",marginTop:2}}>Mortgages + Credit</div>
           </div>
         </div>
@@ -931,11 +1032,11 @@ export default function App() {
           {(()=>{
             const total=1153332;
             const segments=[
-              {label:"Cash",value:50832,color:"#0891B2"},
-              {label:"Investments",value:217499,color:"#4F46E5"},
-              {label:"Real Estate",value:885001,color:"#D97706"},
+              {label:"Cash",value:tc,color:"#0891B2"},
+              {label:"Investments",value:ti,color:"#4F46E5"},
+              {label:"Real Estate",value:tre,color:"#D97706"},
             ];
-            const liabilities=317282;
+            const liabilities=td;
             const liabPct=(liabilities/total)*100;
             return(<>
               <div style={{height:56,borderRadius:10,overflow:"hidden",display:"flex",marginBottom:8}}>
@@ -972,10 +1073,10 @@ export default function App() {
           {(()=>{
             const total=1153330;
             // Left column: Real Estate (76.7% of total) — tall
-            const reTotal=885000;
+            const reTotal=tre;
             const rightTotal=total-reTotal; // investments + cash = 267500
-            const invTotal=217500;
-            const cashTotal=50840;
+            const invTotal=ti;
+            const cashTotal=tc;
             const H=420; // total height
             const invH=Math.round((invTotal/rightTotal)*H);
             const cashH=H-invH;
@@ -984,9 +1085,9 @@ export default function App() {
                 {/* LEFT: Real Estate — 3 stacked tiles proportional to value */}
                 <div style={{flex:reTotal,display:"flex",flexDirection:"column",gap:3}}>
                   {[
-                    {label:"SW 79th",sub:"Primary Home",value:425000,color:"#92400E"},
-                    {label:"R5",sub:"Rental",value:235000,color:"#D97706"},
-                    {label:"F314",sub:"Rental",value:225000,color:"#B45309"},
+                    {label:"SW 79th",sub:"Primary Home",value:sw79,color:"#92400E"},
+                    {label:"R5",sub:"Rental",value:r5v,color:"#D97706"},
+                    {label:"F314",sub:"Rental",value:f314v,color:"#B45309"},
                   ].map(item=>(
                     <div key={item.label} style={{flex:item.value,background:item.color,padding:"10px 12px",display:"flex",flexDirection:"column",justifyContent:"space-between",minHeight:0}}>
                       <div style={{fontSize:"0.58rem",fontWeight:"600",color:"rgba(255,255,255,0.65)",letterSpacing:"0.05em"}}>{item.sub}</div>
@@ -1004,7 +1105,7 @@ export default function App() {
                     {[
                       {label:"Retirement",sub:"401k / IRA",value:182840,color:"#1D4ED8"},
                       {label:"529 + HSA",sub:"Educ. & Health",value:25670,color:"#2563EB"},
-                      {label:"Taxable",sub:"Brokerage",value:8990,color:"#3B82F6"},
+                      {label:"Taxable",sub:"Brokerage",value:taxable,color:"#3B82F6"},
                     ].map(item=>(
                       <div key={item.label} style={{flex:item.value,background:item.color,padding:"8px 10px",display:"flex",flexDirection:"column",justifyContent:"space-between",minHeight:0,overflow:"hidden"}}>
                         <div style={{fontSize:"0.56rem",fontWeight:"600",color:"rgba(255,255,255,0.65)",letterSpacing:"0.04em",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{item.sub}</div>
@@ -1029,14 +1130,46 @@ export default function App() {
           })()}
         </div>
 
-        {/* Detail tables — rounded to nearest $10 */}
+        {/* Detail tables — live from balance sheet */}
         {[
-          ["💵 Cash & Checking",[["Checking #3344","$5,340"],["Emergency Fund","$45,250"],["Properties #9501","$240"],["UCU Savings","$10"],["Total Cash","$50,840",true]]],
-          ["📈 Retirement",[["Fidelity 401k","$114,490"],["Roth IRA","$33,570"],["Traditional IRA","$23,240"],["Tasha Traditional","$11,540"],["Total Retirement","$182,840",true]]],
-          ["🎓 529 + HSA",[["Ameriflex HSA","$8,880"],["Vanguard 529 (×2)","$16,790"],["Total 529 + HSA","$25,670",true]]],
-          ["📊 Taxable Brokerage",[["Robinhood","$4,410"],["Tasha Roth","$4,580"],["Total Taxable","$8,990",true]]],
-          ["🏘️ Real Estate",[["20721 SW 79th (Primary)","$425,000"],["7730 Camino Real F314","$225,000"],["9459 SW 76th St. R5","$235,000"],["Total RE","$885,000",true]]],
-          ["🏦 Liabilities",[["Mortgage SW 79th","$172,700",false,true],["Mortgage R5","$98,230",false,true],["Mortgage F314","$34,070",false,true],["Navy Federal","$2,940",false,true],["Amazon Visa","$4,440",false,true],["Total Liabilities","$317,280",true,true]]],
+          ["💵 Cash & Checking",[
+            ["Checking #3344", fmt10(chk)],
+            ["Emergency Fund", fmt10(ef)],
+            ["Properties #9501", fmt10(prop)],
+            ["UCU Savings", fmt10(ucu)],
+            ["Total Cash", fmt10(tc), true],
+          ]],
+          ["📈 Retirement",[
+            ["Fidelity 401k", fmt10(f401)],
+            ["Roth IRA", fmt10(roth)],
+            ["Traditional IRA", fmt10(trad)],
+            ["Tasha Traditional", fmt10(tTrad)],
+            ["Total Retirement", fmt10(retirement), true],
+          ]],
+          ["🎓 529 + HSA",[
+            ["Ameriflex HSA", fmt10(hsa)],
+            ["Vanguard 529 (×2)", fmt10(v529a+v529b)],
+            ["Total 529 + HSA", fmt10(savings529hsa), true],
+          ]],
+          ["📊 Taxable Brokerage",[
+            ["Robinhood", fmt10(rob)],
+            ["Tasha Roth", fmt10(tRoth)],
+            ["Total Taxable", fmt10(taxable), true],
+          ]],
+          ["🏘️ Real Estate",[
+            ["20721 SW 79th (Primary)", fmt10(sw79)],
+            ["7730 Camino Real F314", fmt10(f314v)],
+            ["9459 SW 76th St. R5", fmt10(r5v)],
+            ["Total RE", fmt10(tre), true],
+          ]],
+          ["🏦 Liabilities",[
+            ["Mortgage SW 79th", fmt10(m79), false, true],
+            ["Mortgage R5", fmt10(mR5), false, true],
+            ["Mortgage F314", fmt10(mF314), false, true],
+            ["Navy Federal", fmt10(navy), false, true],
+            ["Amazon Visa", fmt10(amz), false, true],
+            ["Total Liabilities", fmt10(td), true, true],
+          ]],
         ].map(([sec,rows])=>(
           <div key={sec} style={{background:"#fff",border:"1px solid #E5E7EB",borderRadius:14,padding:"12px 14px",marginBottom:9}}>
             <div style={{fontSize:"0.72rem",fontWeight:"bold",color:"#1F2937",marginBottom:10}}>{sec}</div>
@@ -1048,7 +1181,9 @@ export default function App() {
             ))}
           </div>
         ))}
-            </>}
+            </>);
+        })()}
+      </>}
 
     </div>
 
